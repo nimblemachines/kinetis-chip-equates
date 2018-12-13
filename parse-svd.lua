@@ -20,7 +20,7 @@ end
 
 function nicer(id)
     return (id:gsub("(%l)(%u)", function(last, first)
-        return last.."_"..first:lower()
+        return last.."_"..first
     end)):lower()
 end
 
