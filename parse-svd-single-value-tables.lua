@@ -27,7 +27,7 @@ end
 function parsexml(s)
     local first = 1
     local stack = {}    -- nesting of elements
-    local cur = { id = "document" }     -- current element in stack
+    local cur = {}      -- current element in stack
     push(stack, cur)
 
     -- Skip any xml directives
@@ -62,7 +62,8 @@ function parsexml(s)
             -- If there is text between start and end tags, capture it
             -- as the text field of this element.
             local text = s:sub(first, tagstart-1)
-                          :gsub("%s*(.*)%s*", "%1")    -- strip leading and trailing ws
+                          :gsub("%s*(.*)%s*", "%1")     -- strip leading and trailing ws
+
             if text ~= "" then
                 if cur._contents then
                     error "Element can't have text value and also contain elements."
@@ -94,7 +95,7 @@ function parsexml(s)
     if #stack > 1 then
         error("unclosed "..k)
     end
-    return v
+    return v[1].device
 end
 
 -- Function to visit each branch and leaf of a tree.
