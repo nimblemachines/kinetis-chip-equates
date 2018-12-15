@@ -31,3 +31,7 @@ If there was an easy way to keep the SVD/ directory updated with the latest good
 # What else can I do?
 
 The infrastructure is there to generate *any* kind of output from the Lua-fied SVD files. If you have a favorite language that needs "equates" files for a Kinetis microcontroller, go forth and modify!
+
+# BSD-licensed!
+
+See the `LICENSE` file for details.
