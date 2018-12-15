@@ -1,0 +1,6 @@
+The files in this directory were copied from the Kinetis SDK V1.30, dating
+from 2015.
+
+Look for KSDK_1.3.0/platform/devices/<chip>/<chip>.svd
+
+The big question is, are there newer versions somewhere? Does anyone know?
