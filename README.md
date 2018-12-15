@@ -24,10 +24,10 @@ will process the Kinetis L SVD files, first by generating a Lua representation o
 
     make slow
 
-will do *all* the chips, but it's also *much* slower. Many of FRDM boards are based on a Kinetis L chip.
+will do *all* the chips, but it's also *much* slower. The quicker invocation might be fine for you; many of the Freescale FRDM boards are based on a Kinetis L chip.
 
 If there was an easy way to keep the SVD/ directory updated with the latest goodies from Freescale/NXP (so sad) I would happily do it.
 
 # What else can I do?
 
-The infrastructure is there to generate *any* kind of output from the Lua-fied SVD files. If you have a favorite language that need "equates" files for a Kinetis microcontroller, go forth and modify!
+The infrastructure is there to generate *any* kind of output from the Lua-fied SVD files. If you have a favorite language that needs "equates" files for a Kinetis microcontroller, go forth and modify!
