@@ -77,7 +77,7 @@ function print_regs(chip)
             as_equates(v, path, ctx)
 
             if path == "/peripherals/peripheral/registers/register" then
-                local name = ctx.periph.prepend_to_name .. ctx.reg.name
+                local name = (ctx.periph.prepend_to_name or "") .. ctx.reg.name
                 local addr = tonumber(ctx.periph.base_address) + tonumber(ctx.reg.address_offset)
                 local descr = (ctx.reg.description and "| "..ctx.reg.description) or ""
                 if ctx.reg.dim then
