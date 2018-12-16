@@ -73,13 +73,12 @@ function print_regs(chip)
             path = path.."/"..k
             if path == "/peripherals" then
                 -- print chip info
-                io.write "( Automagically generated! DO NOT EDIT!)\n\n"
-                io.write(fmt("( %s %s %s equates. Generated from %s.svd, version %s)\n",
-                    ctx.chip.vendor_id,
-                    ctx.chip.series,
-                    ctx.chip.name,
-                    ctx.chip.name,
-                    ctx.chip.version))
+                -- XXX print source file? print github repo address?
+                io.write "( Automagically generated! DO NOT EDIT!\n\n"
+                io.write(fmt("  %s %s %s equates, version %s\n\n",
+                    ctx.chip.vendor_id, ctx.chip.series, ctx.chip.name, ctx.chip.version))
+                io.write(fmt("  Generated from https://github.com/nimblemachines/kinetis-chip-equates/blob/master/SVD/%s.svd)\n\nhex\n",
+                    ctx.chip.name))
             elseif path == "/peripherals/peripheral" then
                 -- reset context
                 ctx.periph = {}
