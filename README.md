@@ -12,7 +12,7 @@ In the 100+ MB zip file (!!) that I downloaded, I found the gold mine. In
 
     KSDK_1.3.0/platform/devices/
 
-there is a directory for each chip, and in that directory is an SVD file - a gawdawful XML file that describes all the registers and register fields. I've included all of the SVD files here, in the directory `SVD/`.
+there is a directory for each chip, and in that directory is an [SVD file - a gawdawful XML file that describes all the registers and register fields](http://www.keil.com/pack/doc/CMSIS/SVD/html/). I've included all of the SVD files here, in the directory `SVD/`.
 
 # How do I use this?
 
@@ -20,13 +20,17 @@ I wrote two Lua scripts: one - `parse-svd.lua` - to parse the XML into a big Lua
 
     make
 
-will process the Kinetis L SVD files, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file.
+will process the SVD files for the chips on the Freescale FRDM boards, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file. Unfortunately, only 14 of the 25 FRDM boards that are shown on the [MCUExpresso site](https://mcuxpresso.nxp.com/) are represented in the Kinetis SDK version 1.3.
 
-    make slow
+    make kl
 
-will do *all* the chips, but it's also *much* slower. The quicker invocation might be fine for you; many of the Freescale FRDM boards are based on a Kinetis L chip.
+will process the Kinetis L SVD files into `.mu4` files;
 
-If there was an easy way to keep the SVD/ directory updated with the latest goodies from Freescale/NXP (so sad) I would happily do it.
+    make everything
+
+will process *all* the SVD files into 'mu4' files, but it's also *much* slower.
+
+If there was an easy way to keep the SVD/ directory updated with the latest goodies from Freescale/NXP I would happily do it.
 
 # What else can I do?
 
