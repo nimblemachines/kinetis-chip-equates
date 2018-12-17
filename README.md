@@ -28,7 +28,7 @@ will process the Kinetis L SVD files into `.mu4` files;
 
     make everything
 
-will process *all* the SVD files into 'mu4' files, but it's also *much* slower.
+will process *all* the SVD files into `mu4` files, but it's also *much* slower.
 
 If there was an easy way to keep the SVD/ directory updated with the latest goodies from Freescale/NXP I would happily do it.
 
