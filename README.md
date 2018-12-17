@@ -12,7 +12,7 @@ In the 100+ MB zip file (!!) that I downloaded, I found the gold mine. In
 
     KSDK_1.3.0/platform/devices/
 
-there is a directory for each chip, and in that directory is an [SVD file - a gawdawful XML file that describes all the registers and register fields](http://www.keil.com/pack/doc/CMSIS/SVD/html/). I've included all of the SVD files here, in the directory `SVD/`.
+there is a directory for each chip, and in that directory is a [CMSIS-SVD file - a gawdawful XML file that describes all the registers and register fields](http://www.keil.com/pack/doc/CMSIS/SVD/html/). I've included all of the CMSIS-SVD files here, in the directory `SVD/`.
 
 # How do I use this?
 
@@ -20,11 +20,11 @@ I wrote two Lua scripts: one - `parse-svd.lua` - to parse the XML into a big Lua
 
     make
 
-will process the SVD files for the chips on the Freescale FRDM boards, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file. Unfortunately, only 14 of the 25 FRDM boards that are shown on the [MCUExpresso site](https://mcuxpresso.nxp.com/) are represented in the Kinetis SDK version 1.3.
+will process the SVD files for the chips on the Freescale FRDM boards, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file. Unfortunately, only the chips on 14 of the 25 FRDM boards that are shown on the [MCUExpresso site](https://mcuxpresso.nxp.com/) are represented in the Kinetis SDK version 1.3.
 
     make kl
 
-will process the Kinetis L SVD files into `.mu4` files;
+will process all the Kinetis L SVD files into `.mu4` files;
 
     make everything
 
