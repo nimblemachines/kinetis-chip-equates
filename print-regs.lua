@@ -73,7 +73,6 @@ function print_regs(chip)
             path = path.."/"..k
             if path == "/peripherals" then
                 -- print chip info
-                -- XXX print source file? print github repo address?
                 io.write "( Automagically generated! DO NOT EDIT!\n\n"
                 io.write(fmt("  %s %s %s equates, version %s\n\n",
                     ctx.chip.vendor_id, ctx.chip.series, ctx.chip.name, ctx.chip.version))
@@ -82,6 +81,9 @@ function print_regs(chip)
             elseif path == "/peripherals/peripheral" then
                 -- reset context
                 ctx.periph = {}
+            elseif path == "/peripherals/peripheral/interrupt" then
+                -- reset context
+                ctx.interrupt = {}
             elseif path == "/peripherals/peripheral/registers" then
                 -- print heading for this peripheral
                 io.write(fmt("\n( %s: %s)\n", ctx.periph.name, unparen(ctx.periph.description)))
@@ -99,12 +101,7 @@ function print_regs(chip)
             -- Recurse into subtable
             as_equates(v, path, ctx)
 
-            if path == "/peripherals/peripheral/registers/register" then
-                -- If register has no fields, we won't have printed it above. Do it now.
-                if not ctx.reg.printed then
-                    print_reg()
-                end
-            elseif path == "/peripherals/peripheral/registers/register/fields/field" then
+            if path == "/peripherals/peripheral/registers/register/fields/field" then
                 -- Registers defined with "dim" also have fields... but
                 -- printing the fields for each version of the register
                 -- would be stupid. Let's instead just remove the "%s" from
@@ -114,7 +111,30 @@ function print_regs(chip)
                                   ctx.reg.name:gsub("%%s", "")  .. "_" .. ctx.field.name
                     local descr = (ctx.field.description and "| "..ctx.field.description) or ""
                     io.write(fmt("  #%02d #%02d field  %-28s %s\n", ctx.field.bit_offset, ctx.field.bit_width,
-                                                                   name, descr))
+                                                                    name, descr))
+                end
+            elseif path == "/peripherals/peripheral/registers/register" then
+                -- If register has no fields, we won't have printed it above. Do it now.
+                if not ctx.reg.printed then
+                    print_reg()
+                end
+            elseif path == "/peripherals/peripheral/interrupt" then
+                local vector = tonumber(ctx.interrupt.value)
+                ctx.interrupts[vector] = ctx.interrupt.name
+                ctx.interrupts.max = math.max(ctx.interrupts.max, vector)
+            elseif path == "/peripherals" then
+                -- We've processed all the peripherals; print the interrupt vectors.
+                io.write "\n( IRQ vectors)\n"
+                --io.stderr:write(fmt("max interrupt: %d\n", ctx.interrupts.max))
+                for i = 0, ctx.interrupts.max do
+                    local name = ctx.interrupts[i]
+                    if name then
+                        -- Fix LLW mistake
+                        name = (name == "LLW") and "LLWU" or name
+                        io.write(fmt("  %02x equ  %s_IRQ\n", i, name))
+                    else
+                        io.write(fmt("( %02x      Reserved)\n", i))
+                    end
                 end
             end
         end,
@@ -124,6 +144,8 @@ function print_regs(chip)
                 ctx.chip[k] = v
             elseif path == "/peripherals/peripheral" then
                 ctx.periph[k] = v
+            elseif path == "/peripherals/peripheral/interrupt" then
+                ctx.interrupt[k] = v
             elseif path == "/peripherals/peripheral/registers/register" then
                 ctx.reg[k] = v
             elseif path == "/peripherals/peripheral/registers/register/fields/field" then
@@ -131,7 +153,7 @@ function print_regs(chip)
             end
         end)
 
-    as_equates(chip, "", { chip = {} })
+    as_equates(chip, "", { chip = {}, interrupts = { max = 0 } })
 end
 
 -- arg 1 is lua file to process
