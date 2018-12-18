@@ -4,15 +4,13 @@
 #### Variables
 
 # Everything
-DFP_FILES=	$(wildcard NXP_DFP/*.xml)
-SVD_FILES=	$(wildcard SVD/*.svd)
+DFP_FILES:=	$(wildcard SVD/NXP_DFP/*.xml)
+KSDK_FILES:=	$(wildcard SVD/KSDK-1.3.0/*.svd)
 
 DFP_CHIPS=	$(basename $(notdir $(DFP_FILES)))
-SVD_CHIPS=	$(basename $(notdir $(SVD_FILES)))
+KSDK_CHIPS=	$(basename $(notdir $(KSDK_FILES)))
 
-# Try DFP first, then SVD
-SVD_NOT_DFP_CHIPS=	$(filter-out $(DFP_CHIPS),$(SVD_CHIPS))
-ALL_CHIPS=	$(DFP_CHIPS) $(SVD_NOT_DFP_CHIPS)
+ALL_CHIPS=	$(DFP_CHIPS) $(KSDK_CHIPS)
 
 LUA_FILES=	$(patsubst %,%.lua,$(ALL_CHIPS))
 MU4_FILES=	$(LUA_FILES:.lua=.mu4)
@@ -32,6 +30,8 @@ MU4_KL_FILES=	$(LUA_KL_FILES:.lua=.mu4)
 
 
 #### Targets
+
+.PHONY : frdm kl everything
 
 # By default, make just the FRDM boards subset
 all : frdm
@@ -57,17 +57,19 @@ $(MU4_FILES) : print-regs.lua
 .PRECIOUS : $(LUA_FILES)
 
 # NOTE: When make finds two pattern rules that match, it uses the *first* one.
-# We want to prefer the files in NXP_DFP/ to those in SVD/. Let's see if this
-# actually works!
+# We want to prefer the files in SVD/NXP_DFP/ to those in SVD/KSDK-1.3.0/.
+# Let's see if this actually works!
 
-%.lua : NXP_DFP/%.xml
+%.lua : SVD/NXP_DFP/%.xml
 	lua parse-svd.lua $< > $@
 
-%.lua : SVD/%.svd
+%.lua : SVD/KSDK-1.3.0/%.svd
 	lua parse-svd.lua $< > $@
 
 %.mu4 : %.lua
 	lua print-regs.lua $< > $@
+
+.PHONY : clean
 
 clean :
 	rm -f MK*.lua MK*.mu4
@@ -87,7 +89,7 @@ keil-pack-index.xml :
 keil-pack-index.lua : keil-pack-index.xml parse-pack-index.lua
 	lua parse-pack-index.lua $< > $@
 
-.PHONY : get-packs show-packs unzip-packs
+.PHONY : get-packs show-packs unzip-packs update clean-dfp clean-packs spotless
 
 show-packs : keil-pack-index.lua
 	@lua gen-downloads.lua $< NXP "^MK.*_DFP$$" show
@@ -97,5 +99,16 @@ get-packs : keil-pack-index.lua
 	lua gen-downloads.lua $< NXP "^MK.*_DFP$$" get | sh
 
 unzip-packs : get-packs
-	mkdir -p NXP_DFP
-	for p in pack/*.pack; do unzip $$p "MK*.xml" -d NXP_DFP; done
+	mkdir -p SVD/NXP_DFP
+	for p in pack/*.pack; do unzip -u $$p "MK*.xml" -d SVD/NXP_DFP; done
+
+update : unzip-packs
+
+clean-dfp :
+	rm -f keil-pack-index.*
+	rm -rf SVD/NXP_DFP/
+
+clean-packs : clean-dfp
+	rm -rf pack/
+
+spotless : clean clean-packs
