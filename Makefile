@@ -93,8 +93,8 @@ show-packs : keil-pack-index.lua
 	@lua gen-downloads.lua $< NXP "^MK.*_DFP$$" show
 
 get-packs : keil-pack-index.lua
-	@mkdir -p pack
-	@lua gen-downloads.lua $< NXP "^MK.*_DFP$$" get | sh
+	mkdir -p pack
+	lua gen-downloads.lua $< NXP "^MK.*_DFP$$" get | sh
 
 unzip-packs : get-packs
 	mkdir -p NXP_DFP
