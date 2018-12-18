@@ -43,14 +43,15 @@ I wrote two Lua scripts:
 * [`parse-svd.lua`](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/parse-svd.lua) - parses the SVD file's XML into a big Lua table and prints it out
 * [`print-regs.lua`](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/print-regs.lua) - slurps in that big Lua table and prints out register (and register field) definitions, and the interrupt vector table, in a form that muforth can understand.
 
+The default Makefile target builds a "FRDM boards" subset of the chips. Running
 
     make
 
-will process the SVD files for the chips on the Freescale FRDM boards, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file. By combining the downloaded DFP files with the Kinetis SDK files, I'm able to generate `.mu4` files for 23 of the 25 FRDM boards that are shown on the [MCUXpresso SDK Builder](https://mcuxpresso.nxp.com/).
+will process the SVD files for this subset, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file. By combining the downloaded DFP files with the Kinetis SDK files, I'm able to generate `.mu4` files for 23 of the 25 FRDM boards that are shown on the [MCUXpresso SDK Builder](https://mcuxpresso.nxp.com/).
 
     make kl
 
-will process all the Kinetis L SVD files into `.mu4` files;
+will process all the Kinetis L SVD files into `.mu4` files; and
 
     make everything
 
