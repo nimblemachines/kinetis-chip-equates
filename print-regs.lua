@@ -76,8 +76,8 @@ function print_regs(chip)
                 io.write "( Automagically generated! DO NOT EDIT!\n\n"
                 io.write(fmt("  %s %s %s equates, version %s\n\n",
                     ctx.chip.vendor_id, ctx.chip.series, ctx.chip.name, ctx.chip.version))
-                io.write(fmt("  Generated from https://github.com/nimblemachines/kinetis-chip-equates/blob/master/SVD/%s.svd)\n\nhex\n",
-                    ctx.chip.name))
+                io.write(fmt("  Generated from https://github.com/nimblemachines/kinetis-chip-equates/blob/master/%s)\n\nhex\n",
+                    ctx.chip.source_file))
             elseif path == "/peripherals/peripheral" then
                 -- reset context
                 ctx.periph = {}

@@ -127,7 +127,7 @@ end
 
 function indent(n) return (" "):rep(n) end
 
-function print_as_lua(chip)
+function print_as_lua(source_file, chip)
     local as_lua
 
     as_lua = visit(
@@ -141,6 +141,7 @@ function print_as_lua(chip)
             io.write(fmt("%s{ %s = %q },\n", indent(n), k, v))
         end)
 
+    table.insert(chip, 1, { source_file = source_file } )
     io.write "return {\n"
     as_lua(chip, 4)
     io.write "}\n"
@@ -151,7 +152,7 @@ function doit()
     local f = io.open(arg[1], "r")
     local s = f:read("a")   -- read entire file as a string
     f:close()
-    print_as_lua(parsexml(s))
+    print_as_lua(arg[1], parsexml(s))
 end
 
 doit()
