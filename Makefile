@@ -4,13 +4,15 @@
 #### Variables
 
 # Everything
+CUSTOM_FILES:=	$(wildcard SVD/custom/*.xml)
 DFP_FILES:=	$(wildcard SVD/NXP_DFP/*.xml)
 KSDK_FILES:=	$(wildcard SVD/KSDK-1.3.0/*.svd)
 
+CUSTOM_CHIPS=	$(basename $(notdir $(CUSTOM_FILES)))
 DFP_CHIPS=	$(basename $(notdir $(DFP_FILES)))
 KSDK_CHIPS=	$(basename $(notdir $(KSDK_FILES)))
 
-ALL_CHIPS=	$(DFP_CHIPS) $(KSDK_CHIPS)
+ALL_CHIPS=	$(CUSTOM_CHIPS) $(DFP_CHIPS) $(KSDK_CHIPS)
 
 LUA_FILES=	$(patsubst %,%.lua,$(ALL_CHIPS))
 MU4_FILES=	$(LUA_FILES:.lua=.mu4)
@@ -57,8 +59,11 @@ $(MU4_FILES) : print-regs.lua
 .PRECIOUS : $(LUA_FILES)
 
 # NOTE: When make finds two pattern rules that match, it uses the *first* one.
-# We want to prefer the files in SVD/NXP_DFP/ to those in SVD/KSDK-1.3.0/.
+# We want custom/ to override NXP_DFP/, and NXP_DFP/ to override KSDK-1.3.0/.
 # Let's see if this actually works!
+
+%.lua : SVD/custom/%.xml
+	lua parse-svd.lua $< > $@
 
 %.lua : SVD/NXP_DFP/%.xml
 	lua parse-svd.lua $< > $@
