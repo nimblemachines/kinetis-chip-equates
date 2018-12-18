@@ -124,18 +124,19 @@ function print_regs(chip)
                 ctx.interrupts.max = math.max(ctx.interrupts.max, vector)
             elseif path == "/peripherals" then
                 -- We've processed all the peripherals; print the interrupt vectors.
-                io.write "\n( IRQ vectors)\n"
+                io.write "\n( IRQ vectors)\ndecimal\n"
                 --io.stderr:write(fmt("max interrupt: %d\n", ctx.interrupts.max))
                 for i = 0, ctx.interrupts.max do
                     local name = ctx.interrupts[i]
                     if name then
                         -- Fix LLW mistake
                         name = (name == "LLW") and "LLWU" or name
-                        io.write(fmt("  %02x equ  %s_IRQ\n", i, name))
+                        io.write(fmt("  %3d equ  %s_IRQ\n", i, name))
                     else
-                        io.write(fmt("( %02x      Reserved)\n", i))
+                        io.write(fmt("( %3d      Reserved)\n", i))
                     end
                 end
+                io.write "hex\n"
             end
         end,
 
