@@ -20,7 +20,7 @@ I wrote two Lua scripts: one - `parse-svd.lua` - to parse the XML into a big Lua
 
     make
 
-will process the SVD files for the chips on the Freescale FRDM boards, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file. Unfortunately, only the chips on 14 of the 25 FRDM boards that are shown on the [MCUExpresso site](https://mcuxpresso.nxp.com/) are represented in the Kinetis SDK version 1.3.
+will process the SVD files for the chips on the Freescale FRDM boards, first by generating a Lua representation of the SVD file, and then reading that in and generating a muforth (.mu4) file. Unfortunately, only the chips on 14 of the 25 FRDM boards that are shown on the [MCUXpresso SDK Builder](https://mcuxpresso.nxp.com/) are represented in the Kinetis SDK version 1.3.
 
     make kl
 
@@ -30,7 +30,23 @@ will process all the Kinetis L SVD files into `.mu4` files;
 
 will process *all* the SVD files into `mu4` files, but it's also *much* slower.
 
-If there was an easy way to keep the SVD/ directory updated with the latest goodies from Freescale/NXP I would happily do it.
+# What if my chip is missing from the list?
+
+If there was an easy way to keep the SVD/ directory updated with the latest goodies from Freescale/NXP I would happily do it. Unfortunately, it seems that the only way to get updated versions of these files is to do it by hand, for each chip, on the [MCUXpresso SDK Builder](https://mcuxpresso.nxp.com/). (For the brave and curious, after downloading your "custom" SDK you'll find the SVD file for your chip in the ./devices/<chip>/<chip>.xml file.)
+
+I'm not the only one with this problem. Even the [Zephyr project](https://github.com/zephyrproject-rtos/zephyr/tree/master/ext/hal/nxp/mcux) is struggling with getting up-to-date header files for NXP/Freescale chips.
+
+[Getting Started with MCUXpresso SDK CMSIS Packs](https://www.nxp.com/docs/en/user-guide/MCUXSDKPACKSGSUG.pdf) - a document from November 2017 - talks about "CMSIS packs downloaded from MCUXpresso packs repository", including "Device Family Packs", which contain the following:
+
+* Device header files and system initialization modules
+* Startup files
+* Linker files
+* SVD files
+* Flash drivers (for some of the development tools)
+* SDK drivers and utilities
+* SDK project templates
+
+Sounds perfect, right? Sadly, there is no way to download these "CMSIS packs". I can't seem to find the "MCUXpresso packs repository", just the SDK Builder.
 
 # What else can I do?
 
