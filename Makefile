@@ -12,7 +12,9 @@ CUSTOM_CHIPS=	$(basename $(notdir $(CUSTOM_FILES)))
 DFP_CHIPS=	$(basename $(notdir $(DFP_FILES)))
 KSDK_CHIPS=	$(basename $(notdir $(KSDK_FILES)))
 
-ALL_CHIPS=	$(CUSTOM_CHIPS) $(DFP_CHIPS) $(KSDK_CHIPS)
+BROKEN=		MKE14Z4 MKE16Z4 MKE04Z4 MKE15Z4
+
+ALL_CHIPS=	$(filter-out $(BROKEN),$(CUSTOM_CHIPS) $(DFP_CHIPS) $(KSDK_CHIPS))
 
 LUA_FILES=	$(patsubst %,%.lua,$(ALL_CHIPS))
 MU4_FILES=	$(LUA_FILES:.lua=.mu4)
@@ -49,8 +51,6 @@ everything : $(MU4_FILES)
 
 
 #### Rules
-
-$(LUA_FILES) $(MU4_FILES) : Makefile
 
 $(LUA_FILES) : parse-svd.lua
 
