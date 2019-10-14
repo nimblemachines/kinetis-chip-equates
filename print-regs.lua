@@ -49,6 +49,18 @@ function unparen(s)
 end
 
 function print_regs(chip)
+    local sensible_gpio = {
+        PDOR = "OUT",   -- Port Data Output Register
+        PSOR = "SET",   -- Port Set Output Register
+        PCOR = "CLR",   -- Port Clear Output Register
+        PTOR = "TOG",   -- Port Toggle Output Register; XXX should this be "TGL" instead?
+        PDIR = "PIN",   -- Port Data Input Register
+        PDDR = "DIR",   -- Port Data Direction Register
+        PIDR = "DIS",   -- Port Input Disable Register
+    }
+
+    local append = table.insert
+
     local as_equates
 
     as_equates = visit(
@@ -61,10 +73,16 @@ function print_regs(chip)
                     -- Print multiple registers
                     local offset = 0
                     for i in ctx.reg.dim_index:gmatch "%w+" do
-                        io.write(fmt("%s equ    %-28s %s\n", muhex(addr + offset), fmt(name, i), unparen(descr)))
+                        io.write(fmt("%s equ    %-28s %s\n",
+                                muhex(addr + offset), fmt(name, i), unparen(descr)))
                         offset = offset + ctx.reg.dim_increment
                     end
                 else
+                    if ctx.periph.name:match "GPIO" and sensible_gpio[ctx.reg.name] then
+                        local sensible_name = ctx.periph.prepend_to_name .. sensible_gpio[ctx.reg.name]
+                        append(ctx.sensibles, { addr = addr, name = sensible_name, descr = descr })
+                        descr = fmt("| DEPRECATED: Use %s instead", sensible_name)
+                    end
                     io.write(fmt("%s equ    %-28s %s\n", muhex(addr), name, unparen(descr)))
                 end
                 ctx.reg.printed = true
@@ -81,6 +99,7 @@ function print_regs(chip)
             elseif path == "/peripherals/peripheral" then
                 -- reset context
                 ctx.periph = {}
+                ctx.sensibles = {}
             elseif path == "/peripherals/peripheral/interrupt" then
                 -- reset context
                 ctx.interrupt = {}
@@ -102,16 +121,22 @@ function print_regs(chip)
             as_equates(v, path, ctx)
 
             if path == "/peripherals/peripheral/registers/register/fields/field" then
-                -- Registers defined with "dim" also have fields... but
-                -- printing the fields for each version of the register
-                -- would be stupid. Let's instead just remove the "%s" from
-                -- the name.
-                if ctx.field.bit_width < ctx.reg.size then
-                    local name = (ctx.periph.prepend_to_name or "") ..
-                                  ctx.reg.name:gsub("%%s", "")  .. "_" .. ctx.field.name
-                    local descr = (ctx.field.description and "| "..ctx.field.description) or ""
-                    io.write(fmt("  #%02d #%02d field  %-28s %s\n", ctx.field.bit_offset, ctx.field.bit_width,
-                                                                    name, descr))
+                if not ctx.periph.name:match "GPIO" then
+                    -- Only print register fields for non-GPIO registers.
+                    -- Printing "this is bit 7 of the direction register"
+                    -- is pointless.
+
+                    -- Registers defined with "dim" also have fields... but
+                    -- printing the fields for each version of the register
+                    -- would be stupid. Let's instead just remove the "%s" from
+                    -- the name.
+                    if ctx.field.bit_width < ctx.reg.size then
+                        local name = (ctx.periph.prepend_to_name or "") ..
+                                      ctx.reg.name:gsub("%%s", "")  .. "_" .. ctx.field.name
+                        local descr = (ctx.field.description and "| "..ctx.field.description) or ""
+                        io.write(fmt("  #%02d #%02d field  %-28s %s\n", ctx.field.bit_offset, ctx.field.bit_width,
+                                                                        name, descr))
+                    end
                 end
             elseif path == "/peripherals/peripheral/registers/register" then
                 -- If register has no fields, we won't have printed it above. Do it now.
@@ -122,6 +147,14 @@ function print_regs(chip)
                 local vector = tonumber(ctx.interrupt.value)
                 ctx.interrupts[vector] = ctx.interrupt.name
                 ctx.interrupts.max = math.max(ctx.interrupts.max, vector)
+            elseif path == "/peripherals/peripheral" then
+                if #ctx.sensibles > 0 then
+                    io.write(fmt("\n( More sensible %s register names:)\n", ctx.periph.name))
+                    for _, reg in ipairs(ctx.sensibles) do
+                        io.write(fmt("%s equ    %-28s %s\n",
+                                muhex(reg.addr), reg.name, unparen(reg.descr)))
+                    end
+                end
             elseif path == "/peripherals" then
                 -- We've processed all the peripherals; print the interrupt vectors.
                 io.write "\n( IRQ vectors)\ndecimal\n"
@@ -145,12 +178,15 @@ function print_regs(chip)
                 ctx.chip[k] = v
             elseif path == "/peripherals/peripheral" then
                 ctx.periph[k] = v
+                if k == "name" then debug(v) end
             elseif path == "/peripherals/peripheral/interrupt" then
                 ctx.interrupt[k] = v
             elseif path == "/peripherals/peripheral/registers/register" then
                 ctx.reg[k] = v
+                if k == "name" then debug("  " .. v) end
             elseif path == "/peripherals/peripheral/registers/register/fields/field" then
                 ctx.field[k] = v
+                if k == "name" then debug("    " .. v) end
             end
         end)
 
