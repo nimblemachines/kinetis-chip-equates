@@ -1,10 +1,10 @@
 # Why?
 
-One of the issues with rolling your own language - especially if, like [muforth](https://muforth.nimblemachines.com/), it is a cross-compiler that targets microcontrollers - is that you need to find or create, for every chip you care about, "equates" files that describe the i/o registers, their memory addresses, and their bit definitions.
+One of the issues with rolling your own language &ndash; especially if, like [muforth](https://muforth.nimblemachines.com/), it is a cross-compiler that targets microcontrollers &ndash; is that you need to find or create, for every chip you care about, "equates" files that describe the i/o registers, their memory addresses, and their bit definitions.
 
-It's a lot of work - and error-prone - to type these in by hand. For the Freescale S08 and the Atmel AVR I was able to get pretty good results by "scraping" the PDF files by hand (yes, by hand, with a mouse), pasting the results into a file, and then running code that processed the text into a useful form.
+It's a lot of work &ndash; and error-prone &ndash; to type these in by hand. For the Freescale S08 and the Atmel AVR I was able to get pretty good results by "scraping" the PDF files by hand (yes, by hand, with a mouse), pasting the results into a file, and then running code that processed the text into a useful form.
 
-For the STM32 ARM microcontrollers I wrote code that shoddily "parses" the .h files (which I found in their "Std Periph Lib" and STM32Cube zip files - I tried both) and prints out muforth code.
+For the STM32 ARM microcontrollers I wrote code that shoddily "parses" the .h files (which I found in their "Std Periph Lib" and STM32Cube zip files &ndash; I tried both) and prints out muforth code.
 
 When I went looking for something similar for Freescale's Kinetis microcontrollers, I found the "Kinetis SDK", but was unable to find a recent (2.0) version that had definitions for all their chips. It doesn't seem to exist for 2.0. All I could find is the 1.3 version, which seems pretty old (it's from 2015).
 
@@ -12,11 +12,11 @@ In the 662 MiB zip file (!!) that I downloaded, I found the gold mine. In
 
     KSDK_1.3.0/platform/devices/
 
-there is a directory for each chip, and in that directory is a [CMSIS-SVD file - a gawdawful XML file that describes all the registers and register fields](http://www.keil.com/pack/doc/CMSIS/SVD/html/). I've included all of the CMSIS-SVD files here, in the directory `SVD/`.
+there is a directory for each chip, and in that directory is a [CMSIS-SVD file &ndash; a gawdawful XML file that describes all the registers and register fields](http://www.keil.com/pack/doc/CMSIS/SVD/html/). I've included all of the CMSIS-SVD files here, in the directory `SVD/`.
 
-These files got me started, but since then I've discovered Keil's [CMSIS-Pack](http://www.keil.com/pack/doc/CMSIS/Pack/html/index.html) project and their [meta-repository](http://www.keil.com/pack/doc/CMSIS/Pack/html/packIndexFile.html). The idea is that vendors can make available - via a simple web API - updated "packs" that describe a chip or a board. By downloading [Keil's pack index](http://www.keil.com/pack/index.pidx) it's easy to find what packs each vendor makes available.
+These files got me started, but since then I've discovered Keil's [CMSIS-Pack](http://www.keil.com/pack/doc/CMSIS/Pack/html/index.html) project and their [meta-repository](http://www.keil.com/pack/doc/CMSIS/Pack/html/packIndexFile.html). The idea is that vendors can make available &ndash; via a simple web API &ndash; updated "packs" that describe a chip or a board. By downloading [Keil's pack index](http://www.keil.com/pack/index.pidx) it's easy to find what packs each vendor makes available.
 
-[Getting Started with MCUXpresso SDK CMSIS Packs](https://www.nxp.com/docs/en/user-guide/MCUXSDKPACKSGSUG.pdf) - a document from November 2017 - talks about "CMSIS packs downloaded from MCUXpresso packs repository", including "Device Family Packs", which contain the following:
+[Getting Started with MCUXpresso SDK CMSIS Packs](https://www.nxp.com/docs/en/user-guide/MCUXSDKPACKSGSUG.pdf) &ndash; a document from November 2017 &ndash; talks about "CMSIS packs downloaded from MCUXpresso packs repository", including "Device Family Packs", which contain the following:
 
 * Device header files and system initialization modules
 * Startup files
@@ -40,8 +40,8 @@ This will download the current index of CMSIS-Pack files from Keil, then downloa
 
 I wrote two Lua scripts: 
 
-* [`parse-svd.lua`](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/parse-svd.lua) - parses the SVD file's XML into a big Lua table and prints it out
-* [`print-regs.lua`](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/print-regs.lua) - slurps in that big Lua table and prints out register (and register field) definitions, and the interrupt vector table, in a form that muforth can understand.
+* [`parse-svd.lua`](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/parse-svd.lua) &ndash; parses the SVD file's XML into a big Lua table and prints it out
+* [`print-regs.lua`](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/print-regs.lua) &ndash; slurps in that big Lua table and prints out register (and register field) definitions, and the interrupt vector table, in a form that muforth can understand.
 
 The default Makefile target builds a "FRDM boards" subset of the chips. Running
 
