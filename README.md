@@ -28,7 +28,7 @@ These files got me started, but since then I've discovered Keil's [CMSIS-Pack](h
 
 Sounds perfect, right? There are a bunch of NXP DFP packs in [Keil's pack index](http://www.keil.com/pack/index.pidx), and I've added [Lua code to parse the index](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/parse-pack-index.lua), and a [Makefile](https://github.com/nimblemachines/kinetis-chip-equates/blob/master/Makefile) target to download and unzip the likely culprits.
 
-I'm not the only one with this problem. Even the [Zephyr project](https://github.com/zephyrproject-rtos/zephyr/tree/master/ext/hal/nxp/mcux) is struggling with getting up-to-date header files for NXP/Freescale chips.
+I'm not the only one with this problem. Even the [Zephyr project](https://github.com/zephyrproject-rtos/zephyr/) is struggling with [getting up-to-date header files for NXP/Freescale chips](https://github.com/zephyrproject-rtos/hal_nxp/tree/master/mcux).
 
 # How do I use this?
 
