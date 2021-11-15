@@ -1,5 +1,5 @@
 -- A re-interpretation of Roberto's XML parser
--- Parse an ARM SVD chip description file
+-- Parse an XML file and return a Lua table that represents it.
 
 -- shortcuts
 fmt  = string.format
@@ -7,8 +7,7 @@ push = table.insert
 pop  = table.remove
 
 -- for debugging, turn printing of parsing process on or off
---debug = function(s) io.stderr:write(s .. "\n") end
-debug = function (s) end
+debug = function(s) io.stderr:write(s .. "\n") end
 
 function parseattrs(s)
     local attrs = {}
@@ -30,25 +29,17 @@ function parsexml(s)
     local cur = {}      -- current element in stack
     push(stack, cur)
 
-    -- Skip any xml directives
-    while true do
-        local xmlstart, xmlend = s:find("<%?xml.->", first)
-        if xmlstart then
-            debug("skipping " .. s:sub(xmlstart, xmlend))
-            first = xmlend + 1
-        else
-            break
-        end
-    end
+    -- Throw away XML directives and comments, ahead of time.
+    s = s:gsub("<%?xml (.-)%?>", "")
+         :gsub("<!%-%-(.-)%-%->", "")
 
-    -- Now parse everything else
     while true do
         local tagstart, tagend, closing, key, attrs =
             s:find("<(/?)([%w:-]+)(.-)>", first)
 
         if not tagstart then break end
 
-        debug(fmt("<%s%s%s>", closing, key, attrs))
+        --debug(fmt("<%s%s%s>", closing, key, attrs))
 
         if closing == "/" then
             if key ~= cur._key then
@@ -62,12 +53,11 @@ function parsexml(s)
             -- If there is text between start and end tags, capture it
             -- as the text field of this element.
             local text = s:sub(first, tagstart-1)
+                          :gsub("%s+", " ")             -- collapse multiple ws into one space
                           :gsub("%s*(.*)%s*", "%1")     -- strip leading and trailing ws
 
             if text ~= "" then
-                if cur._contents then
-                    error "Element can't have text value and also contain elements."
-                end
+                --debug(text)
                 cur[key] = text
             else
                 cur[key] = cur._contents    -- might be nil!
@@ -93,7 +83,7 @@ function parsexml(s)
 
     local k, v = next(cur)
     if #stack > 1 then
-        error("unclosed "..k)
+        error("unclosed "..stack[#stack]._key)
     end
     return v[1].device
 end
@@ -151,6 +141,7 @@ end
 function doit()
     local f = io.open(arg[1], "r")
     local s = f:read("a")   -- read entire file as a string
+    s = s:gsub("\r", "")    -- remove any CR chars
     f:close()
     print_as_lua(arg[1], parsexml(s))
 end
