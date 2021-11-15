@@ -3,52 +3,22 @@
 
 #### Variables
 
-# Everything
-CUSTOM_FILES:=	$(wildcard SVD/custom/*.xml)
-DFP_FILES:=	$(wildcard SVD/NXP_DFP/*.xml)
-KSDK_FILES:=	$(wildcard SVD/KSDK-1.3.0/*.svd)
+FRDM_FILES=	$(wildcard svd/MK*.xml) KSDK-1.3.0/MKL25Z4.svd
+FRDM_CHIPS=	$(basename $(notdir $(FRDM_FILES)))
 
-CUSTOM_CHIPS=	$(basename $(notdir $(CUSTOM_FILES)))
-DFP_CHIPS=	$(basename $(notdir $(DFP_FILES)))
-KSDK_CHIPS=	$(basename $(notdir $(KSDK_FILES)))
-
-BROKEN=		MKE14Z4 MKE16Z4 MKE04Z4 MKE15Z4
-
-ALL_CHIPS=	$(filter-out $(BROKEN),$(CUSTOM_CHIPS) $(DFP_CHIPS) $(KSDK_CHIPS))
+# Let's do a very small subset right now. Things are pretty broken.
+ALL_CHIPS=	MKL25Z4 MKL26Z4 MKL46Z4 rp2040
 
 LUA_FILES=	$(patsubst %,%.lua,$(ALL_CHIPS))
 MU4_FILES=	$(LUA_FILES:.lua=.mu4)
 
-# FRDM boards subset
-FRDM_CHIPS=	MK22F51212 MK28F15 MK28FA15 MK64F12 MK66F18 MK82F25615 \
-		MKE02Z4 MKE04Z4 MKE06Z4 MKE15Z7 MKL02Z4 MKL03Z4 MKL25Z4 \
-		MKL26Z4 MKL27Z644 MKL28Z7 MKL43Z4 MKL46Z4 MKL82Z7 MKV10Z7 \
-		MKV11Z7 MKV31F51212 MKW24D5 MKW36Z4 MKW41Z4
-
-LUA_FRDM_FILES=	$(patsubst %,%.lua,$(filter $(FRDM_CHIPS),$(ALL_CHIPS)))
-MU4_FRDM_FILES=	$(LUA_FRDM_FILES:.lua=.mu4)
-
-# Kinetis_L subset
-LUA_KL_FILES=	$(patsubst %,%.lua,$(filter MKL%,$(ALL_CHIPS)))
-MU4_KL_FILES=	$(LUA_KL_FILES:.lua=.mu4)
+# Raspberry Pi RP2040 source path
+rp2040_path=	https://raw.githubusercontent.com/raspberrypi/pico-sdk/master/src/rp2040/hardware_regs/rp2040.svd
 
 
 #### Targets
 
-.PHONY : frdm kl everything
-
-# By default, make just the FRDM boards subset
-all : frdm
-
-# FRDM boards subset
-frdm : $(MU4_FRDM_FILES)
-
-# Kinetis L subset
-kl : $(MU4_KL_FILES)
-
-# Everything
-everything : $(MU4_FILES)
-
+all :  $(MU4_FILES)
 
 #### Rules
 
@@ -59,61 +29,110 @@ $(MU4_FILES) : print-regs.lua
 .PRECIOUS : $(LUA_FILES)
 
 # NOTE: When make finds two pattern rules that match, it uses the *first* one.
-# We want custom/ to override NXP_DFP/, and NXP_DFP/ to override KSDK-1.3.0/.
-# Let's see if this actually works!
 
-%.lua : SVD/custom/%.xml
-	lua parse-svd.lua $< > $@
+%.lua : svd/%.svd
+	lua parse-xml.lua $< > $@
 
-%.lua : SVD/NXP_DFP/%.xml
-	lua parse-svd.lua $< > $@
+%.lua : svd/%.xml
+	lua parse-xml.lua $< > $@
 
-%.lua : SVD/KSDK-1.3.0/%.svd
-	lua parse-svd.lua $< > $@
+%.lua : KSDK-1.3.0/%.svd
+	lua parse-xml.lua $< > $@
+
+rp2040.mu4 : rp2040.lua print-regs-generic.lua
+	lua print-regs-generic.lua $< $(rp2040_path) > $@
 
 %.mu4 : %.lua
 	lua print-regs.lua $< > $@
-
-.PHONY : clean
-
-clean :
-	rm -f MK*.lua MK*.mu4
 
 
 #### Downloading and parsing Keil's CMSIS-Pack files
 
 # Keil keeps a list of CMSIS "packs". We can grab the latest copy and use it
 # as a source for SVD files.
-# CMSIS-Pack files:       http://www.keil.com/pack/doc/CMSIS/Pack/html/
-# CMSIS-Pack index files: http://www.keil.com/pack/doc/CMSIS/Pack/html/packIndexFile.html
+# CMSIS-Pack files:       https://www.keil.com/pack/doc/CMSIS/Pack/html/
+# CMSIS-Pack index files: https://www.keil.com/pack/doc/CMSIS/Pack/html/packIndexFile.html
 # A pack's download URL is formed like this: <repo>/<vendor>.<packname>.<version>.pack
 
 keil-pack-index.xml :
-	curl -L -o $@ http://www.keil.com/pack/index.pidx
+	curl -L -o $@ https://www.keil.com/pack/index.pidx
 
 keil-pack-index.lua : keil-pack-index.xml parse-pack-index.lua
 	lua parse-pack-index.lua $< > $@
 
-.PHONY : get-packs show-packs unzip-packs update clean-dfp clean-packs spotless
 
-show-packs : keil-pack-index.lua
-	@lua gen-downloads.lua $< NXP "^MK.*_DFP$$" show
+# XXX Added some STM32 and GigaDevice GD32 rules. If I decide to use STM32 SVD
+# files instead of .h files, I will need to download all th STM32 packs. I
+# added the GD32 rules mostly to be able to make an equates file for the
+# GD32VF103 RISC-V chip.
+.PHONY : show-kinetis-packs get-kinetis-packs \
+	show-stm32-packs get-stm32-packs \
+	show-gd32-packs get-gd32-packs
 
-get-packs : keil-pack-index.lua
-	mkdir -p pack
-	lua gen-downloads.lua $< NXP "^MK.*_DFP$$" get | sh
+pack :
+	mkdir pack
 
-unzip-packs : get-packs
-	mkdir -p SVD/NXP_DFP
-	for p in pack/*.pack; do unzip -u $$p "MK*.xml" -d SVD/NXP_DFP; done
+show-kinetis-packs : keil-pack-index.lua
+	@lua gen-downloads.lua $< NXP "^MKE.*_DFP$$" show
+	@lua gen-downloads.lua $< NXP "^MKL.*_DFP$$" show
 
-update : unzip-packs
+get-kinetis-packs : keil-pack-index.lua pack
+	#lua gen-downloads.lua $< NXP "^MKE.*_DFP$$" get | sh
+	lua gen-downloads.lua $< NXP "^MKL.*_DFP$$" get | sh
 
-clean-dfp :
-	rm -f keil-pack-index.*
-	rm -rf SVD/NXP_DFP/
+show-stm32-packs : keil-pack-index.lua
+	@lua gen-downloads.lua $< Keil "^STM32F.*_DFP$$" show
+	@lua gen-downloads.lua $< Keil "^STM32G.*_DFP$$" show
 
-clean-packs : clean-dfp
+get-stm32-packs : keil-pack-index.lua pack
+	lua gen-downloads.lua $< Keil "^STM32F.*_DFP$$" get | sh
+	lua gen-downloads.lua $< Keil "^STM32G.*_DFP$$" get | sh
+
+show-gd32-packs : keil-pack-index.lua
+	@lua gen-downloads.lua $< GigaDevice "^GD32F10x.*_DFP$$" show
+
+get-gd32-packs : keil-pack-index.lua pack
+	lua gen-downloads.lua $< GigaDevice "^GD32F10x.*_DFP$$" get | sh
+
+svd/rp2040.svd : svd
+	curl -L -o $@ $(rp2040_path)
+
+.PHONY : unzip-kinetis-packs unzip-stm32-packs unzip-gd32-packs \
+	update
+
+# NOTE: unzip -j will throw away paths, rather than recreating hierarchy
+#
+svd :
+	mkdir svd
+
+unzip-kinetis-packs : get-kinetis-packs svd
+	for p in pack/NXP.MK*.pack; do unzip -aa -j -u $$p "MK*.xml" -d svd; done
+
+unzip-stm32-packs : get-stm32-packs svd
+	for p in pack/Keil.STM32*.pack; do unzip -aa -j -u $$p "*.svd" -d svd; done
+
+unzip-gd32-packs : get-gd32-packs svd
+	for p in pack/GigaDevice.GD32*.pack; do unzip -aa -j -u $$p "*.svd" -d svd; done
+
+# XXX The stm32 packs are rather huge. Let's not grab them until/unless we
+# decide to use SVD files rather than ST's .h files.
+update : svd/rp2040.svd unzip-kinetis-packs #unzip-gd32-packs unzip-stm32-packs
+
+
+#### Cleaning up the mess
+
+.PHONY : clean clean-svd clean-packs clean-index spotless
+
+clean :
+	rm -f MK*.lua STM32*.lua GD32*.lua rp2040.lua *.mu4
+
+clean-svd :
+	rm -rf svd/
+
+clean-packs :
 	rm -rf pack/
 
-spotless : clean clean-packs
+clean-index :
+	rm -f keil-pack-index.*
+
+spotless : clean clean-index clean-packs clean-svd

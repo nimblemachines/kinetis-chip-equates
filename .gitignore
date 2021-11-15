@@ -1,5 +1,6 @@
 /*.mu4
 /MK*.lua
+/rp2040.lua
 /pack/
-/SVD/NXP_DFP/
+/svd/
 /keil-pack-index*
