@@ -52,7 +52,7 @@ everything : $(MU4_FILES)
 
 #### Rules
 
-$(LUA_FILES) : parse-svd.lua
+$(LUA_FILES) : parse-xml.lua
 
 $(MU4_FILES) : print-regs.lua
 
