@@ -12,10 +12,6 @@ ALL_CHIPS=	MKL25Z4 MKL26Z4 MKL46Z4 rp2040
 LUA_FILES=	$(patsubst %,%.lua,$(ALL_CHIPS))
 MU4_FILES=	$(LUA_FILES:.lua=.mu4)
 
-# Raspberry Pi RP2040 source path
-rp2040_path=	https://raw.githubusercontent.com/raspberrypi/pico-sdk/master/src/rp2040/hardware_regs/rp2040.svd
-
-
 #### Targets
 
 all :  $(MU4_FILES)
@@ -39,12 +35,19 @@ $(MU4_FILES) : print-regs.lua
 %.lua : KSDK-1.3.0/%.svd
 	lua parse-xml.lua $< > $@
 
-rp2040.mu4 : rp2040.lua print-regs-generic.lua
-	lua print-regs-generic.lua $< $(rp2040_path) > $@
-
 %.mu4 : %.lua
 	lua print-regs.lua $< > $@
 
+#### Raspberry Pi RP2040
+
+# SVD source path
+rp2040_path=	https://raw.githubusercontent.com/raspberrypi/pico-sdk/master/src/rp2040/hardware_regs/rp2040.svd
+
+svd/rp2040.svd : svd
+	curl -L -o $@ $(rp2040_path)
+
+rp2040-equates.mu4 : rp2040.lua print-regs-generic.lua
+	lua print-regs-generic.lua $< $(rp2040_path) > $@
 
 #### Downloading and parsing Keil's CMSIS-Pack files
 
@@ -93,9 +96,6 @@ show-gd32-packs : keil-pack-index.lua
 
 get-gd32-packs : keil-pack-index.lua pack
 	lua gen-downloads.lua $< GigaDevice "^GD32F10x.*_DFP$$" get | sh
-
-svd/rp2040.svd : svd
-	curl -L -o $@ $(rp2040_path)
 
 .PHONY : unzip-kinetis-packs unzip-stm32-packs unzip-gd32-packs \
 	update
