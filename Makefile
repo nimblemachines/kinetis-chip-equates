@@ -41,12 +41,13 @@ $(MU4_FILES) : print-regs.lua
 #### Raspberry Pi RP2040
 
 # SVD source path
-rp2040_path=	https://raw.githubusercontent.com/raspberrypi/pico-sdk/master/src/rp2040/hardware_regs/rp2040.svd
+rp2040_path=	https://raw.githubusercontent.com/raspberrypi/pico-sdk/master/src/rp2040/hardware_regs/RP2040.svd
 
 svd/rp2040.svd : svd
 	curl -L -o $@ $(rp2040_path)
 
-rp2040-equates.mu4 : rp2040.lua print-regs-generic.lua
+# Override the lua -> mu4 pattern for the rp2040.
+rp2040.mu4 : rp2040.lua print-regs-generic.lua
 	lua print-regs-generic.lua $< $(rp2040_path) > $@
 
 #### Downloading and parsing Keil's CMSIS-Pack files
