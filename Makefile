@@ -16,6 +16,9 @@ MU4_FILES=	$(LUA_FILES:.lua=.mu4)
 
 all :  $(MU4_FILES)
 
+# XXX We need an install target to copy files from here to muforth device
+# directories!
+
 #### Rules
 
 $(LUA_FILES) : parse-xml.lua
