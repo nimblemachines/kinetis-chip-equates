@@ -128,7 +128,13 @@ function print_as_lua(source_file, chip)
         end,
 
         function(k, v, n)
-            io.write(fmt("%s{ %s = %q },\n", indent(n), k, v))
+            if v:match "^%-?%d+$" or v:match "^0x%x+$" then
+                -- v is a number; don't quote it
+                io.write(fmt("%s{ %s = %s },\n", indent(n), k, v))
+            else
+                -- let Lua figure out how to quote the value
+                io.write(fmt("%s{ %s = %q },\n", indent(n), k, v))
+            end
         end)
 
     table.insert(chip, 1, { source_file = source_file } )
