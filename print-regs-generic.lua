@@ -1,6 +1,6 @@
 -- Given a parsed .SVD file (in Lua table form), print out some registers
 
--- Generic version. Useful for Pico and GD32?
+-- Generic version. Useful for Pico (RP2040/2350) and GD32 and ESP32?
 
 -- Strip any trailing spaces or tabs, then append a newline.
 function out(format, ...)
@@ -132,6 +132,50 @@ function print_vectors(c)
 end
 
 function print_periphs(c)
+    local function add_reg(reg, regs)
+        -- Single register
+        regs[#regs+1] = { name = reg.name,
+                          address_offset = reg.address_offset,
+                          descr = reg.description }
+    end
+    local function add_cluster(reg, regs)
+        local function remove_array(s)
+            return s:gsub("%[%%s%]", "", 1)
+        end
+
+        -- Cluster of registers
+        local name = reg.dim_name or reg.name
+        local count = reg.dim
+        local incr = reg.dim_increment
+        local array_present
+        name, array_present = remove_array(name)
+        if array_present == 1 then
+            -- array rather than cluster
+            local units = (incr == 4) and "words" or
+                          (incr == 2) and "halfwords" or "bytes"
+            local descr = string.format("%s (%d %s)",
+                remove_array(reg.description), count, units)
+
+            regs[#regs+1] = { name = name,
+                              address_offset = reg.address_offset,
+                              descr = descr }
+        else
+            -- true cluster
+            local start = reg.dim_index and
+                tonumber(reg.dim_index:match "^(%d+)%-") or 0
+            local addr = reg.address_offset
+            for instance = start, start + count - 1 do
+                local instance_num = string.format("%d", instance)
+                local instance_name = name:gsub("%%s", instance_num, 1)
+                local descr = reg.description:gsub("%%s", instance_num, 1)
+                regs[#regs+1] = { name = instance_name,
+                                  address_offset = addr,
+                                  descr = descr }
+                addr = addr + incr
+            end
+        end
+    end
+
     out "\n( Register addresses)"
 
     table.sort(c.periphs, function(x, y)
@@ -140,9 +184,17 @@ function print_periphs(c)
     for _, periph in ipairs(c.periphs) do
         out("\n( %s)", periph.name)
 
-        table.sort(periph.regs, function(x, y)
-            return x.address_offset < y.address_offset
-        end)
+        -- We used to sort the registers by their address_offsets and then
+        -- print them out.
+        --
+        -- However, if there are register "clusters" - created by
+        -- dim/dim_increment and friends - the registers may end up getting
+        -- printed out of order.
+        --
+        -- Let's instead put the registers - and generated clusters and
+        -- arrays - into a second array; when we have processed all the
+        -- registers belonging to the peripheral, only *then* sort and
+        -- print it.
 
         local max_regname_len = 0
         for _, reg in ipairs(periph.regs) do
@@ -151,11 +203,26 @@ function print_periphs(c)
         local regfmt = string.format("%%s equ %%-%ds %%s",
             max_regname_len + periph.name:len() + 3)
 
+        -- regs will contain single reg definitions, arrays, and generated
+        -- clusters.
+        local regs = {}
         for _, reg in ipairs(periph.regs) do
+            if reg.dim then
+                add_cluster(reg, regs)
+            else
+                add_reg(reg, regs)
+            end
+        end
+        -- Now we can sort everything.
+        table.sort(regs, function(x, y)
+            return x.address_offset < y.address_offset
+        end)
+        -- And then print them all out.
+        for _, reg in ipairs(regs) do
             out(regfmt,
                 muhex(reg.address_offset + periph.base_address),
                 periph.name .. "_" .. reg.name,
-                fix_descr(reg.description))
+                fix_descr(reg.descr))
         end
     end
 end
@@ -199,8 +266,7 @@ function process_chip(chip)
             elseif path == "/peripherals/peripheral/registers/register" then
                 append(ctx.regs, ctx.reg)
             elseif path == "/peripherals/peripheral/interrupt" then
-                local vector = tonumber(ctx.interrupt.value)
-                append(ctx.interrupts, { name = ctx.interrupt.name, vector = vector })
+                append(ctx.interrupts, { name = ctx.interrupt.name, vector = ctx.interrupt.value })
             elseif path == "/peripherals/peripheral" then
                 ctx.periph.regs = ctx.regs
                 append(ctx.periphs, ctx.periph)
