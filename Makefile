@@ -7,10 +7,15 @@ FRDM_FILES=	$(wildcard svd/MK*.xml) KSDK-1.3.0/MKL25Z4.svd
 FRDM_CHIPS=	$(basename $(notdir $(FRDM_FILES)))
 
 # Let's do a very small subset right now. Things are pretty broken.
-ALL_CHIPS=	MKL25Z4 MKL26Z4 MKL46Z4 rp2040
+KINETIS_CHIPS=	MKL25Z4 MKL26Z4 MKL46Z4
+OTHER_CHIPS=	rp2040 esp32c3 esp32c6
 
-LUA_FILES=	$(patsubst %,%.lua,$(ALL_CHIPS))
-MU4_FILES=	$(LUA_FILES:.lua=.mu4)
+KINETIS_LUA_FILES=	$(patsubst %,%.lua,$(KINETIS_CHIPS))
+OTHER_LUA_FILES=	$(patsubst %,other/%.lua,$(OTHER_CHIPS))
+
+# Leaving off Kinetis devices for now...
+LUA_FILES=	$(OTHER_LUA_FILES)
+MU4_FILES=	$(patsubst %,%.mu4,$(OTHER_CHIPS))
 
 #### Targets
 
@@ -23,7 +28,8 @@ all :  $(MU4_FILES)
 
 $(LUA_FILES) : parse-xml.lua
 
-$(MU4_FILES) : print-regs.lua
+$(MU4_KINETIS_FILES) : print-regs.lua
+$(MU4_OTHER_FILES) : print-regs-generic.lua
 
 .PRECIOUS : $(LUA_FILES)
 
@@ -41,17 +47,27 @@ $(MU4_FILES) : print-regs.lua
 %.mu4 : %.lua
 	lua print-regs.lua $< > $@
 
-#### Raspberry Pi RP2040
+#### Non-Kinetis chips
 
-# SVD source path
-rp2040_path=	https://raw.githubusercontent.com/raspberrypi/pico-sdk/master/src/rp2040/hardware_regs/RP2040.svd
+# We don't want to keep downloading the SVD files unnecessarily;
+# unfortunately, since Make considers them "intermediate files" its default is
+# to delete them.
 
-svd/rp2040.svd : svd
-	curl -L -o $@ $(rp2040_path)
+.PRECIOUS : other/%.svd
 
-# Override the lua -> mu4 pattern for the rp2040.
-rp2040.mu4 : rp2040.lua print-regs-generic.lua
-	lua print-regs-generic.lua $< $(rp2040_path) > $@
+other/%.svd : other/%.url
+	curl -L -o $@ $(shell cat $<)
+
+other/%.lua : other/%.svd
+	lua parse-xml.lua $< > $@
+
+%.mu4 : other/%.lua
+	lua print-regs-generic.lua $< $(shell cat other/$*.url) > $@
+
+.PHONY : show
+show :
+	@echo LUA: $(LUA_FILES)
+	@echo MU4: $(MU4_FILES)
 
 #### Downloading and parsing Keil's CMSIS-Pack files
 
@@ -128,7 +144,7 @@ update : svd/rp2040.svd unzip-kinetis-packs #unzip-gd32-packs unzip-stm32-packs
 .PHONY : clean clean-svd clean-packs clean-index spotless
 
 clean :
-	rm -f MK*.lua STM32*.lua GD32*.lua rp2040.lua *.mu4
+	rm -f $(MU4_FILES) $(LUA_FILES) other/*.svd
 
 clean-svd :
 	rm -rf svd/
